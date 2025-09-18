@@ -1,6 +1,10 @@
 import { Geist } from "next/font/google";
 import { Poppins } from "next/font/google";
 import "@/assets/styles/globals.css";
+import "photoswipe/dist/photoswipe.css";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import ClientLayout from "@/app/properties/components/ClientLayout";
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -26,7 +30,8 @@ export default function MainLayout({ children }) {
         className={`${poppins.variable} ${geistSans.variable} antialiased`}
         suppressHydrationWarning
       >
-        <main>{children}</main>
+        <ClientLayout>{children}</ClientLayout>
+        <ToastContainer />
       </body>
     </html>
   );
