@@ -1,35 +1,55 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react"; // CHANGE: Added useMemo
 import { toast } from "react-toastify";
 import markMessageAsRead from "@/app/actions/markMessageAsRead";
 import deleteMessage from "@/app/actions/deleteMessage";
 import { useGlobalContext } from "@/context/GlobalContext";
+import React from "react"; // CHANGE: Added for React.memo
 
 const MessageCard = ({ message }) => {
   const [isRead, setIsRead] = useState(message.read);
   const [isDeleted, setIsDeleted] = useState(false);
   const { setUnreadCount } = useGlobalContext();
 
-  const handleRead = async () => {
-    const read = await markMessageAsRead(message._id);
-    setIsRead(read);
-    setUnreadCount((prevCount) => {
-      read ? prevCount - 1 : prevCount + 1;
+  // CHANGE: Memoize formatted date to avoid recomputation on every render
+  const formattedDate = useMemo(() => {
+    return new Date(message.createdAt).toLocaleString("en-US", {
+      dateStyle: "short",
+      timeStyle: "medium",
     });
-    toast.success(`Marked As ${read ? "Read" : "New"}`);
+  }, [message.createdAt]);
+
+  const handleRead = async () => {
+    try {
+      const read = await markMessageAsRead(message._id);
+      // CHANGE: Only update state and count if the action succeeds
+      setIsRead(read);
+      setUnreadCount((prevCount) => (read ? prevCount - 1 : prevCount + 1));
+      toast.success(`Marked As ${read ? "Read" : "New"}`);
+    } catch (error) {
+      // CHANGE: Added error handling
+      toast.error("Failed to update message status");
+      console.error("Error marking message as read:", error);
+    }
   };
 
   const handleDelete = async () => {
-    await deleteMessage(message._id);
-    setIsDeleted(true);
-    setUnreadCount((prevCount) => {
-      isRead ? prevCount : prevCount - 1;
-    });
-    toast.success(`Message Deleted`);
+    try {
+      await deleteMessage(message._id);
+      // CHANGE: Only update state and count if the action succeeds
+      setIsDeleted(true);
+      setUnreadCount((prevCount) => (isRead ? prevCount : prevCount - 1));
+      toast.success("Message Deleted");
+    } catch (error) {
+      // CHANGE: Added error handling
+      toast.error("Failed to delete message");
+      console.error("Error deleting message:", error);
+    }
   };
 
+  // CHANGE: Early return for deleted state to avoid rendering the rest
   if (isDeleted) {
-    return <p>Message deleted</p>;
+    return <p className="text-gray-500">Message deleted</p>;
   }
 
   return (
@@ -46,40 +66,40 @@ const MessageCard = ({ message }) => {
       <p className="text-gray-700">{message.body}</p>
       <ul className="mt-4">
         <li>
-          <strong>Reply Email:</strong>{" "}
-          <a href={`email: {message.email}`} className="text-blue-500">
+          <strong>Reply Email:</strong> {/* CHANGE: Fixed email link syntax */}
+          <a href={`mailto:${message.email}`} className="text-blue-500">
             {message.email}
           </a>
         </li>
         <li>
-          <strong>Reply Phone:</strong>{" "}
-          <a href={`tel: {message.phone}`} className="text-blue-500">
+          <strong>Reply Phone:</strong> {/* CHANGE: Fixed phone link syntax */}
+          <a href={`tel:${message.phone}`} className="text-blue-500">
             {message.phone}
           </a>
         </li>
         <li>
-          <strong>Recieved:</strong>{" "}
-          {new Date(message.createdAt).toLocaleString("en-US", {
-            dateStyle: "short", // e.g., 9/15/2025
-            timeStyle: "medium", // e.g., 9:42:18 PM
-          })}
+          <strong>Received:</strong> {formattedDate}{" "}
+          {/* CHANGE: Use memoized date */}
         </li>
+      </ul>
+      <div className="mt-3 flex space-x-4">
+        {/* CHANGE: Moved buttons to a flex container for better styling */}
         <button
           onClick={handleRead}
-          className="mr-4 mt-3 bg-blue-500 text-white py-1 px-3 rounded-md"
+          className="bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600"
         >
           {isRead ? "Mark As New" : "Mark As Read"}
         </button>
         <button
           onClick={handleDelete}
-          className="mr-4 bg-red-500 text-white py-1 px-3 rounded-md"
+          className="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600"
         >
           Delete
         </button>
-      </ul>
+      </div>
     </div>
   );
 };
 
-export default MessageCard;
-
+// CHANGE: Wrap with React.memo to prevent unnecessary re-renders
+export default React.memo(MessageCard);

@@ -1,10 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // Add useRef
 import Image from "next/image";
 import logo from "@/public/images/logo-white.png";
 import profileDefault from "@/public/images/profile.png";
 import Link from "next/link";
-import { FcGoogle } from "react-icons/fc";
+import { FaGoogle } from "react-icons/fa";
 import { usePathname } from "next/navigation";
 import { useSession, signIn, signOut, getProviders } from "next-auth/react";
 import UnreadMessageCount from "./UnreadMessageCount";
@@ -18,6 +18,9 @@ const Navbar = () => {
   const pathname = usePathname();
   const [providers, setProviders] = useState(null);
 
+  // Add a ref to track the dropdown element
+  const dropdownRef = useRef(null);
+
   useEffect(() => {
     const setAuthProvider = async () => {
       const res = await getProviders();
@@ -26,12 +29,30 @@ const Navbar = () => {
     setAuthProvider();
   }, []);
 
+  // Add useEffect to handle outside clicks
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      // Check if the click is outside the dropdown
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsProfileDropdown(false);
+      }
+    };
+
+    // Add event listener for clicks
+    document.addEventListener("mousedown", handleOutsideClick);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, []);
+
   return (
     <nav className="bg-blue-700 border-b border-blue-500">
       <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
         <div className="relative flex h-20 items-center justify-between">
           <div className="absolute inset-y-0 left-0 flex items-center md:hidden">
-            {/* <!-- Mobile menu button--> */}
+            {/* Mobile menu button */}
             <button
               type="button"
               id="mobile-dropdown-button"
@@ -60,15 +81,14 @@ const Navbar = () => {
           </div>
 
           <div className="flex flex-1 items-center justify-center md:items-stretch md:justify-start">
-            {/* <!-- Logo --> */}
+            {/* Logo */}
             <Link className="flex flex-shrink-0 items-center" href="/">
               <Image className="h-10 w-auto" src={logo} alt="PropertyPulse" />
-
               <span className="hidden md:block text-white text-2xl font-bold ml-2">
                 PropertyPulse
               </span>
             </Link>
-            {/* <!-- Desktop Menu Hidden below md screens --> */}
+            {/* Desktop Menu Hidden below md screens */}
             <div className="hidden md:ml-6 md:block">
               <div className="flex space-x-2">
                 <Link
@@ -101,7 +121,7 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* <!-- Right Side Menu (Logged Out) --> */}
+          {/* Right Side Menu (Logged Out) */}
           {!session && (
             <div className="hidden md:block md:ml-6">
               <div className="flex items-center">
@@ -112,7 +132,7 @@ const Navbar = () => {
                       onClick={() => signIn(provider.id)}
                       className="flex items-center text-white bg-gray-700 hover:bg-gray-900 hover:text-white rounded-md px-3 py-2"
                     >
-                      <FcGoogle className="text-white mr-2" />
+                      <FaGoogle className="text-white mr-2" />
                       <span>Login or Register</span>
                     </button>
                   ))}
@@ -120,10 +140,10 @@ const Navbar = () => {
             </div>
           )}
 
-          {/* <!-- Right Side Menu (Logged In) --> */}
+          {/* Right Side Menu (Logged In) */}
           {session && (
             <div className="absolute inset-y-0 right-0 flex items-center pr-2 md:static md:inset-auto md:ml-6 md:pr-0">
-              <Link href="messages" className="relative group">
+              <Link href="/messages" className="relative group">
                 <button
                   type="button"
                   className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
@@ -147,8 +167,8 @@ const Navbar = () => {
                 </button>
                 <UnreadMessageCount />
               </Link>
-              {/* <!-- Profile dropdown button --> */}
-              <div className="relative ml-3">
+              {/* Profile dropdown button */}
+              <div className="relative ml-3" ref={dropdownRef}> {/* Add ref to dropdown container */}
                 <div>
                   <button
                     type="button"
@@ -170,7 +190,7 @@ const Navbar = () => {
                   </button>
                 </div>
 
-                {/* <!-- Profile dropdown --> */}
+                {/* Profile dropdown */}
                 {isProfileDropdown && (
                   <div
                     id="user-menu"
@@ -220,7 +240,7 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* <!-- Mobile menu, show/hide based on menu state. --> */}
+      {/* Mobile menu, show/hide based on menu state. */}
       {isMenuDropdown && (
         <div id="mobile-menu">
           <div className="space-y-1 px-2 pb-3 pt-2">
@@ -259,7 +279,7 @@ const Navbar = () => {
                       onClick={() => signIn(provider.id)}
                       className="flex items-center text-white bg-gray-700 hover:bg-gray-900 hover:text-white rounded-md px-3 py-2 my-5"
                     >
-                      <FcGoogle className="text-white mr-2" />
+                      <FaGoogle className="text-white mr-2" />
                       <span>Login or Register</span>
                     </button>
                   ))}
